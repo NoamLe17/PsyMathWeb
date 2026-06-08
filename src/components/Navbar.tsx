@@ -13,7 +13,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  const isAdmin = user?.email === "noamhemo2001@gmail.com"; 
+  const isAdmin = user?.email === "noamhemo2001@gmail.com" || "novrubin12@gmail.com";
 
   const navLinks = [
     { name: "הקורסים שלי", href: "/dashboard", show: !!user, icon: GraduationCap },
@@ -26,7 +26,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 w-full glass border-b border-slate-200/40 dark:border-white/5 shadow-[0_1px_12px_-2px_rgba(15,23,42,0.04)]" dir="rtl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-18 items-center">
-          
+
           {/* לוגו וניווט ראשי */}
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2.5 group">
@@ -37,20 +37,19 @@ export default function Navbar() {
                 כמותיקס
               </span>
             </Link>
-            
+
             {/* ניווט דסקטופ */}
             <div className="hidden md:flex items-center gap-1.5">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 return link.show && (
-                  <Link 
+                  <Link
                     key={link.href}
                     href={link.href}
-                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${
-                      pathname === link.href 
-                      ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm" 
-                      : "text-black dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 hover:text-blue-600 dark:hover:text-blue-400"
-                    }`}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 ${pathname === link.href
+                        ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm"
+                        : "text-black dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 hover:text-blue-600 dark:hover:text-blue-400"
+                      }`}
                   >
                     <Icon size={16} />
                     {link.name}
@@ -63,7 +62,7 @@ export default function Navbar() {
           {/* אזור משתמש (דסקטופ) */}
           <div className="hidden md:flex items-center gap-3">
             {/* Toggle dark mode */}
-            <button 
+            <button
               onClick={toggleTheme}
               className="p-2.5 rounded-xl text-black dark:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200 cursor-pointer active:scale-90"
               title={theme === "dark" ? "מצב בהיר" : "מצב כהה"}
@@ -72,18 +71,18 @@ export default function Navbar() {
             </button>
 
             {/* Privacy policy link */}
-            <Link 
+            <Link
               href="/privacy"
               className="p-2.5 rounded-xl text-black dark:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-200"
               title="מדיניות פרטיות"
             >
               <FileText size={18} />
             </Link>
-            
+
             {user ? (
               <div className="flex items-center gap-2.5 bg-slate-50/80 dark:bg-white/5 p-1.5 pr-4 rounded-xl border border-slate-200/50 dark:border-white/5">
                 <span className="text-sm font-bold text-black dark:text-white">{user.displayName || user.email}</span>
-                <button 
+                <button
                   onClick={logout}
                   className="px-3.5 py-1.5 text-sm font-bold text-white bg-slate-800 dark:bg-slate-700 rounded-lg hover:bg-red-500 dark:hover:bg-red-500 transition-all duration-200 shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
                 >
@@ -124,17 +123,16 @@ export default function Navbar() {
 
       {/* Backdrop overlay */}
       {isOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 top-18 bg-black/20 dark:bg-black/40 z-40 animate-fade-in"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* תפריט מובייל נפתח */}
-      <div 
-        className={`md:hidden absolute w-full left-0 z-50 glass border-b border-slate-200/40 dark:border-white/5 shadow-xl transition-all duration-300 ease-in-out origin-top ${
-          isOpen ? "opacity-100 scale-y-100 pointer-events-auto" : "opacity-0 scale-y-0 pointer-events-none h-0 overflow-hidden"
-        }`}
+      <div
+        className={`md:hidden absolute w-full left-0 z-50 glass border-b border-slate-200/40 dark:border-white/5 shadow-xl transition-all duration-300 ease-in-out origin-top ${isOpen ? "opacity-100 scale-y-100 pointer-events-auto" : "opacity-0 scale-y-0 pointer-events-none h-0 overflow-hidden"
+          }`}
       >
         <div className="px-4 pt-3 pb-6 space-y-1.5">
           {navLinks.map((link) => {
@@ -144,11 +142,10 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-bold transition-all ${
-                  pathname === link.href 
-                  ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400" 
-                  : "text-black dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 hover:text-blue-600"
-                }`}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-bold transition-all ${pathname === link.href
+                    ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                    : "text-black dark:text-white hover:bg-slate-50 dark:hover:bg-white/5 hover:text-blue-600"
+                  }`}
               >
                 <Icon size={20} />
                 {link.name}
@@ -164,7 +161,7 @@ export default function Navbar() {
             <FileText size={20} />
             מדיניות פרטיות
           </Link>
-          
+
           <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex flex-col gap-2 mt-2">
             {user ? (
               <>
