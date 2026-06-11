@@ -30,23 +30,23 @@ export default function HomePage() {
   // ---------------------------------------------------------
   if (currentView === "splash") {
     return (
-      <main className="min-h-screen bg-slate-950 flex flex-col items-center justify-center relative overflow-hidden" dir="rtl">
+      <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-300" dir="rtl">
         {/* הילות אור זוחלות ברקע */}
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/20 rounded-full blur-[120px] animate-glow-pulse"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-sky-500/20 rounded-full blur-[120px] animate-glow-pulse [animation-delay:2s]"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] h-[30%] bg-indigo-500/10 rounded-full blur-[100px] animate-float-slow"></div>
 
         <div className="z-10 text-center px-6 max-w-4xl animate-page-enter">
-          <span className="inline-flex items-center gap-1.5 px-5 py-2 mb-8 bg-blue-500/10 text-sky-400 border border-blue-500/20 rounded-full text-sm font-black tracking-wide uppercase backdrop-blur-sm">
-            <Sparkles size={14} className="text-sky-400" />
+          <span className="inline-flex items-center gap-1.5 px-5 py-2 mb-8 bg-blue-100/50 dark:bg-blue-500/10 text-sky-600 dark:text-sky-400 border border-blue-200 dark:border-blue-500/20 rounded-full text-sm font-black tracking-wide uppercase backdrop-blur-sm">
+            <Sparkles size={14} className="text-sky-600 dark:text-sky-400" />
             <span>הדרך לציון 800 מתחילה כאן</span>
           </span>
           
-          <h1 className="text-5xl md:text-8xl font-black text-white mb-8 tracking-tight leading-tight font-display">
-            הדרך החכמה לציון <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-sky-300">מושלם</span> בכמותי
+          <h1 className="text-5xl md:text-8xl font-black text-slate-900 dark:text-white mb-8 tracking-tight leading-tight font-display">
+            הדרך החכמה לציון <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-sky-400 dark:from-blue-400 dark:to-sky-300">מושלם</span> בכמותי
           </h1>
           
-          <p className="text-lg md:text-xl text-black dark:text-white max-w-2xl mx-auto mb-14 leading-relaxed font-medium">
+          <p className="text-lg md:text-xl text-slate-700 dark:text-white max-w-2xl mx-auto mb-14 leading-relaxed font-medium">
             גלו את מערכת הלמידה שמחליפה את שיטות הלימוד הישנות. כלים דיגיטליים מתקדמים, תרגול מותאם אישית וסרטונים ברמה הגבוהה ביותר — הכל במקום אחד.
           </p>
           
