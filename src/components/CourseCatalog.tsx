@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
+import AboutStory from "@/components/AboutStory";
 
 interface CourseCatalogProps {
   setCurrentView: (view: string) => void;
@@ -371,6 +372,9 @@ export default function CourseCatalog({ setCurrentView, setSelectedCourse }: Cou
           </div>
         </div>
       )}
+      
+      {/* אזור "הסיפור שלנו" */}
+      <AboutStory />
     </main>
   );
 }

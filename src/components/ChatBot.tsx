@@ -92,8 +92,11 @@ export default function ChatBot() {
     }
   }, [isOpen, isMinimized]);
 
-  useEffect(() => {
-    if (isOpen && messages.length === 0) {
+  const handleOpen = () => {
+    setIsOpen(true);
+    setHasUnread(false);
+    setIsMinimized(false);
+    if (messages.length === 0) {
       setMessages([{
         id: "greeting",
         role: "assistant",
@@ -101,12 +104,6 @@ export default function ChatBot() {
         timestamp: new Date(),
       }]);
     }
-  }, [isOpen, messages.length]);
-
-  const handleOpen = () => {
-    setIsOpen(true);
-    setHasUnread(false);
-    setIsMinimized(false);
   };
 
   const sendMessage = useCallback(async (text: string) => {

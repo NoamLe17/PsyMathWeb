@@ -21,12 +21,12 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // בדיקה אם יש העדפה שמורה ב-localStorage
     const stored = localStorage.getItem("kamotix-theme") as Theme | null;
-    if (stored) {
-      setTheme(stored);
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setTheme("dark");
-    }
-    setMounted(true);
+    const initialTheme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    
+    setTimeout(() => {
+      setTheme(initialTheme);
+      setMounted(true);
+    }, 0);
   }, []);
 
   useEffect(() => {

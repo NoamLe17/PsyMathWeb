@@ -13,12 +13,12 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  const isAdmin = user?.email === "noamhemo2001@gmail.com" || "novrubin12@gmail.com";
+  const isAdmin = user?.email === "noamhemo2001@gmail.com" || user?.email === "novrubin12@gmail.com";
 
   const navLinks = [
     { name: "הקורסים שלי", href: "/dashboard", show: !!user, icon: GraduationCap },
     { name: "קטלוג קורסים", href: "/catalog", show: !!user, icon: ShoppingBag },
-    { name: "תרגול חכם", href: "/practice", show: !!user, icon: Sparkles },
+    { name: "תרגול מקוון", href: "/practice", show: !!user, icon: Sparkles },
     { name: "ניהול תוכן", href: "/admin", show: isAdmin, icon: Settings },
   ];
 

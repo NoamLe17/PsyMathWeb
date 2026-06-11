@@ -73,6 +73,36 @@ export default function SimulationPage() {
     if (user) fetchQuestions();
   }, [user, authLoading, router]);
 
+  // 5. סיום והגשת הסימולציה (moved up to avoid hoisting warning)
+  const handleFinishSimulation = async () => {
+    if (!user) return;
+    setSavingLoading(true);
+    setIsFinished(true);
+
+    let correctCount = 0;
+    questions.forEach((q, idx) => {
+      if (userAnswers[idx] === q.correctIndex) {
+        correctCount++;
+      }
+    });
+
+    setScore({ correct: correctCount, total: questions.length });
+
+    try {
+      await addDoc(collection(db, "users", user.uid, "simulations"), {
+        score: correctCount,
+        totalQuestions: questions.length,
+        timeSpentSeconds: 1200 - timeLeft,
+        completedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error saving simulation:", error);
+    } finally {
+      setSavingLoading(false);
+      setCurrentIndex(0); 
+    }
+  };
+
   // 2. טיימר ספירה לאחור
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -109,37 +139,8 @@ export default function SimulationPage() {
   };
 
   // 5. סיום והגשת הסימולציה
-  const handleFinishSimulation = async () => {
-    if (!user) return;
-    setSavingLoading(true);
-    setIsFinished(true);
-
-    let correctCount = 0;
-    questions.forEach((q, idx) => {
-      if (userAnswers[idx] === q.correctIndex) {
-        correctCount++;
-      }
-    });
-
-    setScore({ correct: correctCount, total: questions.length });
-
-    try {
-      await addDoc(collection(db, "users", user.uid, "simulations"), {
-        score: correctCount,
-        totalQuestions: questions.length,
-        timeSpentSeconds: 1200 - timeLeft,
-        completedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error("Error saving simulation:", error);
-    } finally {
-      setSavingLoading(false);
-      setCurrentIndex(0); 
-    }
-  };
-
   if (authLoading || loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white font-sans" dir="rtl">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-sans" dir="rtl">
       <div className="relative flex items-center justify-center">
         <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
         <Loader2 className="absolute text-blue-400 animate-pulse" size={24} />
@@ -149,12 +150,12 @@ export default function SimulationPage() {
   );
 
   if (questions.length === 0) return (
-    <div className="min-h-screen flex flex-col gap-6 items-center justify-center bg-slate-950 px-6 text-center text-white" dir="rtl">
-      <div className="w-20 h-20 bg-slate-900 text-blue-400 rounded-3xl flex items-center justify-center border border-slate-800 shadow-lg shadow-blue-500/5">
+    <div className="min-h-screen flex flex-col gap-6 items-center justify-center bg-slate-50 dark:bg-slate-950 px-6 text-center text-slate-900 dark:text-white" dir="rtl">
+      <div className="w-20 h-20 bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 rounded-3xl flex items-center justify-center border border-slate-200 dark:border-slate-800 shadow-lg shadow-blue-500/5">
         <ShieldAlert size={40} />
       </div>
       <div>
-        <h2 className="text-2xl font-black mb-2 text-slate-100">אין מספיק שאלות במאגר</h2>
+        <h2 className="text-2xl font-black mb-2 text-slate-900 dark:text-slate-100">אין מספיק שאלות במאגר</h2>
         <p className="text-black dark:text-white max-w-md mx-auto">כדי ליצור סימולציה מלאה, יש להוסיף לפחות שאלה אחת במאגר דרך מערכת הניהול.</p>
       </div>
       <button 
@@ -171,7 +172,7 @@ export default function SimulationPage() {
   const isTimeLow = timeLeft < 120 && !isFinished; // פחות מ-2 דקות
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-20 font-sans relative overflow-hidden animate-page-enter" dir="rtl">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 font-sans relative overflow-hidden animate-page-enter" dir="rtl">
       {/* הילות אור מעוצבות ברקע */}
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none ambient-orb animate-glow-pulse"></div>
       <div className="absolute bottom-10 left-10 w-80 h-80 bg-indigo-600/5 rounded-full blur-3xl pointer-events-none ambient-orb animate-glow-pulse" style={{ animationDelay: '1.5s' }}></div>
@@ -184,16 +185,16 @@ export default function SimulationPage() {
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             <span>חזרה למרכז התרגול</span>
           </Link>
-          <span className="text-sm font-black text-black dark:text-white tracking-wider bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full">
+          <span className="text-sm font-black text-black dark:text-white tracking-wider bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-full">
             מצב סימולציית מבחן
           </span>
         </div>
 
         {/* כותרת עליונה */}
-        <header className="flex justify-between items-center mb-8 bg-slate-900/80 backdrop-blur-xl p-6 rounded-2xl border border-slate-800/80 sticky top-4 z-20 shadow-xl shadow-slate-950/20">
+        <header className="flex justify-between items-center mb-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 sticky top-4 z-20 shadow-xl shadow-slate-950/20">
           <div className="flex flex-col">
             <span className="text-sm font-bold text-black dark:text-white tracking-wide mb-1">מעקב התקדמות בבחינה</span>
-            <div className="font-black text-white text-xl">
+            <div className="font-black text-slate-900 dark:text-white text-xl">
               שאלה {currentIndex + 1} <span className="text-black dark:text-white font-normal text-base">/ {questions.length}</span>
             </div>
           </div>
@@ -212,7 +213,7 @@ export default function SimulationPage() {
             
             <div className={`flex items-center gap-2 font-mono text-xl sm:text-2xl font-black px-4 py-2 rounded-2xl border transition-all duration-300 ${
               isFinished 
-                ? 'bg-slate-800 border-slate-700 text-black dark:text-white' 
+                ? 'bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white' 
                 : isTimeLow 
                 ? 'bg-red-500/10 border-red-500 text-red-400 animate-pulse shadow-md shadow-red-500/10' 
                 : 'bg-blue-500/10 border-blue-500/20 text-blue-400'
@@ -224,7 +225,7 @@ export default function SimulationPage() {
         </header>
 
         {/* מד התקדמות מובנה */}
-        <div className="w-full bg-slate-900 border border-slate-800 h-2.5 rounded-full overflow-hidden mb-8">
+        <div className="w-full bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 h-2.5 rounded-full overflow-hidden mb-8">
           <div 
             className="bg-gradient-to-r from-blue-600 to-sky-500 h-full transition-all duration-500 ease-out" 
             style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
@@ -246,15 +247,15 @@ export default function SimulationPage() {
             </p>
 
             <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-lg mx-auto mb-8">
-              <div className="bg-slate-950/30 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/5">
+              <div className="bg-white/10 dark:bg-slate-950/30 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/20 dark:border-white/5">
                 <div className="text-2xl sm:text-3xl font-black mb-1">{score.correct} / {score.total}</div>
                 <div className="text-indigo-200 text-sm font-bold">תשובות נכונות</div>
               </div>
-              <div className="bg-slate-950/30 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/5">
+              <div className="bg-white/10 dark:bg-slate-950/30 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/20 dark:border-white/5">
                 <div className="text-2xl sm:text-3xl font-black mb-1">{formatTime(1200 - timeLeft)}</div>
                 <div className="text-indigo-200 text-sm font-bold">זמן בחינה</div>
               </div>
-              <div className="bg-slate-950/30 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/5">
+              <div className="bg-white/10 dark:bg-slate-950/30 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/20 dark:border-white/5">
                 <div className="text-2xl sm:text-3xl font-black mb-1">
                   {score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0}%
                 </div>
@@ -262,7 +263,7 @@ export default function SimulationPage() {
               </div>
             </div>
             
-            <div className="inline-flex items-center gap-2 text-sm text-indigo-100 bg-slate-950/20 py-2 px-6 rounded-full border border-white/5">
+            <div className="inline-flex items-center gap-2 text-sm text-indigo-100 bg-white/10 dark:bg-slate-950/20 py-2 px-6 rounded-full border border-white/5">
               <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
               <span>תוכל לבצע כעת תחקור מקיף של כל השאלות בעזרת לחצני הניווט.</span>
             </div>
@@ -270,7 +271,7 @@ export default function SimulationPage() {
         )}
 
         {/* גוף השאלה */}
-        <div className={`bg-slate-900 p-8 md:p-12 rounded-3xl shadow-xl border mb-8 transition-all ${
+        <div className={`bg-white dark:bg-slate-900 p-8 md:p-12 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-xl border mb-8 transition-all ${
           isFinished 
             ? (userAnswers[currentIndex] === currentQuestion.correctIndex 
               ? 'border-emerald-500/30 shadow-emerald-950/5' 
@@ -278,11 +279,11 @@ export default function SimulationPage() {
             : 'border-slate-800/80'
         }`}>
           <div className="flex gap-2.5 mb-8">
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-black dark:text-white font-black text-sm rounded-xl border border-slate-700/50">
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-sm rounded-xl border border-slate-200 dark:border-slate-700/50">
               <Award size={14} className="text-blue-400" />
               שאלה {currentIndex + 1}
             </span>
-            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 text-black dark:text-white font-black text-sm rounded-xl border border-slate-700/50">
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-sm rounded-xl border border-slate-200 dark:border-slate-700/50">
               {currentQuestion.topic === "algebra" 
                 ? "אלגברה" 
                 : currentQuestion.topic === "geometry" 
@@ -293,24 +294,24 @@ export default function SimulationPage() {
             </span>
           </div>
 
-          <h2 className="text-lg sm:text-xl font-black text-white mb-10 leading-relaxed whitespace-pre-wrap">
+          <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white mb-10 leading-relaxed whitespace-pre-wrap">
             {currentQuestion.text}
           </h2>
 
           {currentQuestion.isDataInterpretation && currentQuestion.imageUrl && (
-            <div className="mb-10 rounded-3xl overflow-hidden border border-slate-800 bg-slate-950/50 p-4 flex items-center justify-center max-h-[400px]">
+            <div className="mb-10 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 p-4 flex items-center justify-center max-h-[400px]">
               <img 
                 src={currentQuestion.imageUrl} 
                 alt="תרשים נתונים" 
-                className="max-w-full max-h-[350px] object-contain rounded-2xl shadow-sm border border-slate-800" 
+                className="max-w-full max-h-[350px] object-contain rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800" 
               />
             </div>
           )}
 
           <div className="space-y-3">
             {currentQuestion.options.map((opt: string, idx: number) => {
-              let buttonStyle = "border-slate-800 bg-slate-950/40 text-black dark:text-white hover:border-slate-700 hover:bg-slate-800/40 hover:-translate-y-0.5";
-              let badgeStyle = "bg-slate-900 border-slate-800 text-black dark:text-white";
+              let buttonStyle = "border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 text-slate-900 dark:text-white hover:border-blue-300 dark:hover:border-slate-700 hover:bg-blue-50/50 dark:hover:bg-slate-800/40 hover:-translate-y-0.5";
+              let badgeStyle = "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white";
               let statusIcon = null;
 
               if (isFinished) {
@@ -323,8 +324,8 @@ export default function SimulationPage() {
                   badgeStyle = "bg-red-500 border-red-500 text-white";
                   statusIcon = <X size={14} strokeWidth={3} />;
                 } else {
-                  buttonStyle = "border-slate-900 bg-slate-950/20 text-black dark:text-white opacity-40 cursor-not-allowed"; 
-                  badgeStyle = "bg-slate-950 border-slate-900 text-black dark:text-white";
+                  buttonStyle = "border-slate-200 dark:border-slate-900 bg-slate-100 dark:bg-slate-950/20 text-slate-500 dark:text-white opacity-40 cursor-not-allowed"; 
+                  badgeStyle = "bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-900 text-slate-500 dark:text-white";
                 }
               } else if (selectedOption === idx) {
                 buttonStyle = "border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/10 font-black text-blue-100"; 
@@ -351,7 +352,7 @@ export default function SimulationPage() {
 
           {/* תחקור פתרון בסיום */}
           {isFinished && currentQuestion.explanation && (
-            <div className="mt-10 p-6 bg-slate-950 rounded-2xl border border-slate-800 text-black dark:text-white animate-slide-up">
+            <div className="mt-10 p-6 bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 text-black dark:text-white animate-slide-up">
               <h4 className="font-black text-amber-400 mb-4 text-base sm:text-lg flex items-center gap-2">
                 <Trophy size={20} className="text-amber-400 animate-pulse" />
                 הסבר הפתרון הכמותי
@@ -371,7 +372,7 @@ export default function SimulationPage() {
             className={`flex-1 py-5 rounded-2xl font-black text-base sm:text-xl transition-all flex justify-center items-center gap-2 ${
               currentIndex !== questions.length - 1 
                 ? 'bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 text-white hover:-translate-y-0.5 shadow-lg shadow-blue-500/10' 
-                : 'bg-slate-900 text-black dark:text-white border border-slate-800 cursor-not-allowed'
+                : 'bg-slate-900 text-black dark:text-white border border-slate-200 dark:border-slate-800 cursor-not-allowed'
             }`}
           >
             <span>{isFinished && currentIndex === questions.length - 1 ? 'סוף הבחינה' : 'שאלה הבאה'}</span>
@@ -383,7 +384,7 @@ export default function SimulationPage() {
             disabled={currentIndex === 0}
             className={`py-5 px-6 sm:px-8 rounded-2xl font-black text-base sm:text-xl transition-all flex justify-center items-center gap-2 ${
               currentIndex !== 0 
-                ? 'bg-slate-900 border border-slate-800 text-black dark:text-white hover:bg-slate-800/80' 
+                ? 'bg-slate-900 border border-slate-200 dark:border-slate-800 text-black dark:text-white hover:bg-slate-800/80' 
                 : 'bg-slate-950/20 text-black dark:text-white border border-slate-900 cursor-not-allowed'
             }`}
           >

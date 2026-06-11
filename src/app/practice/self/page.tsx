@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, addDoc, serverTimestamp, doc, getDoc, where } from "firebase/firestore";
 import { 
   Clock, CheckCircle2, XCircle, ChevronLeft, Lightbulb, 
   Loader2, ArrowRight, Check, X, Award, Trophy, Target, 
@@ -18,7 +18,7 @@ export default function SelfPracticePage() {
 
   const [questions, setQuestions] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [savingLoading, setSavingLoading] = useState(false);
 
   // ניהול מצב התשובות והטיימר
@@ -29,50 +29,66 @@ export default function SelfPracticePage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
 
-  // 1. משיכת שאלות מהמאגר
-  useEffect(() => {
-    if (!authLoading && !user) router.push("/login");
-    
-    const fetchQuestions = async () => {
-      if (!user) return;
-      try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          const uData = userDoc.data();
-          const owned = uData.ownedCourses || [];
-          const purchaseDates = uData.purchaseDates || {};
-          
-          const hasActiveCourse = owned.some((id: string) => {
-            const pDateStr = purchaseDates[id];
-            if (!pDateStr) return true;
-            const pDate = new Date(pDateStr);
-            const expiryDate = new Date(pDate.getTime() + 150 * 24 * 60 * 60 * 1000);
-            return expiryDate > new Date();
-          });
-          
-          if (!hasActiveCourse) {
-            router.push("/catalog");
-            return;
-          }
-        } else {
+  // הגדרות תרגול
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<string>("all");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
+
+  // 1. משיכת שאלות מהמאגר (נקרא ע"י לחיצה על התחל תרגול)
+  const fetchQuestions = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const uData = userDoc.data();
+        const owned = uData.ownedCourses || [];
+        const purchaseDates = uData.purchaseDates || {};
+        
+        const hasActiveCourse = owned.some((id: string) => {
+          const pDateStr = purchaseDates[id];
+          if (!pDateStr) return true;
+          const pDate = new Date(pDateStr);
+          const expiryDate = new Date(pDate.getTime() + 150 * 24 * 60 * 60 * 1000);
+          return expiryDate > new Date();
+        });
+        
+        if (!hasActiveCourse) {
           router.push("/catalog");
           return;
         }
-
-        const q = query(collection(db, "questions"));
-        const querySnapshot = await getDocs(q);
-        const fetchedQuestions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        setQuestions(fetchedQuestions);
-        setLoading(false);
-        setTimerActive(true);
-      } catch (error) {
-        console.error("Error fetching questions:", error);
-        setLoading(false);
+      } else {
+        router.push("/catalog");
+        return;
       }
-    };
 
-    if (user) fetchQuestions();
+      let queryConstraints: any[] = [];
+      if (selectedTopic !== "all") {
+        queryConstraints.push(where("topic", "==", selectedTopic));
+      }
+      if (selectedDifficulty !== "all") {
+        queryConstraints.push(where("difficulty", "==", Number(selectedDifficulty)));
+      }
+
+      const q = query(collection(db, "questions"), ...queryConstraints);
+      const querySnapshot = await getDocs(q);
+      let fetchedQuestions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // ערבוב השאלות
+      fetchedQuestions = fetchedQuestions.sort(() => Math.random() - 0.5);
+
+      setQuestions(fetchedQuestions);
+      setIsConfigured(true);
+      setLoading(false);
+      setTimerActive(true);
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!authLoading && !user) router.push("/login");
   }, [user, authLoading, router]);
 
   // 2. הפעלת הטיימר
@@ -139,6 +155,88 @@ export default function SelfPracticePage() {
       setIsFinished(true);
     }
   };
+
+  if (!isConfigured) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0c1222] p-6 font-sans flex items-center justify-center animate-page-enter" dir="rtl">
+        <div className="bg-white dark:bg-slate-900 p-8 sm:p-12 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 max-w-2xl w-full relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-3 text-center tracking-tight">הגדרות תרגול חופשי</h2>
+          <p className="text-slate-600 dark:text-slate-400 text-center mb-10 font-medium">התאם את התרגול לצרכים שלך. בחר נושאים ורמות קושי.</p>
+          
+          <div className="space-y-8 relative z-10">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">בחר נושא</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { id: "all", label: "הכל מעורבב" },
+                  { id: "algebra", label: "אלגברה" },
+                  { id: "geometry", label: "גיאומטריה" },
+                  { id: "charts", label: "הסקה מתרשים" },
+                  { id: "word_problems", label: "בעיות כמותיות" }
+                ].map(topic => (
+                  <button
+                    key={topic.id}
+                    onClick={() => setSelectedTopic(topic.id)}
+                    className={`py-3 px-4 rounded-xl border-2 font-bold transition-all ${
+                      selectedTopic === topic.id 
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 shadow-sm' 
+                        : 'border-slate-200 dark:border-slate-700 bg-transparent text-slate-700 dark:text-slate-300 hover:border-blue-300 dark:hover:border-slate-600'
+                    }`}
+                  >
+                    {topic.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">רמת קושי</h3>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                <button
+                  onClick={() => setSelectedDifficulty("all")}
+                  className={`py-3 px-2 rounded-xl border-2 font-bold transition-all ${
+                    selectedDifficulty === "all" 
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 shadow-sm' 
+                      : 'border-slate-200 dark:border-slate-700 bg-transparent text-slate-700 dark:text-slate-300 hover:border-emerald-300 dark:hover:border-slate-600'
+                  }`}
+                >
+                  הכל
+                </button>
+                {[1, 2, 3, 4, 5].map(level => (
+                  <button
+                    key={level}
+                    onClick={() => setSelectedDifficulty(level.toString())}
+                    className={`py-3 px-2 rounded-xl border-2 font-bold transition-all ${
+                      selectedDifficulty === level.toString() 
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 shadow-sm' 
+                        : 'border-slate-200 dark:border-slate-700 bg-transparent text-slate-700 dark:text-slate-300 hover:border-emerald-300 dark:hover:border-slate-600'
+                    }`}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 flex flex-col sm:flex-row gap-4 relative z-10">
+            <Link href="/practice" className="flex-1 py-4 text-center rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+              חזור למרכז התרגול
+            </Link>
+            <button
+              onClick={fetchQuestions}
+              disabled={loading && user !== null}
+              className="flex-[2] py-4 rounded-2xl font-black text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 shadow-lg shadow-blue-500/20 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:transform-none"
+            >
+              {(loading && user !== null) ? <Loader2 className="animate-spin" /> : 'התחל תרגול!'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading || loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-[#0c1222] font-sans" dir="rtl">
@@ -331,7 +429,7 @@ export default function SelfPracticePage() {
               className={`w-full py-5 rounded-2xl font-black text-lg sm:text-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
                 selectedOption !== null && !savingLoading 
                   ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white hover:-translate-y-0.5' 
-                  : 'bg-slate-200 dark:bg-slate-800 text-black dark:text-white cursor-not-allowed'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
               }`}
             >
               {savingLoading ? <Loader2 className="animate-spin" /> : 'בדוק תשובה'}

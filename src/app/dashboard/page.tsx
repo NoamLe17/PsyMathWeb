@@ -7,6 +7,7 @@ import { doc, getDoc, collection, getDocs, query, orderBy } from "firebase/fires
 import { PlayCircle, CheckCircle2, TrendingUp, Award, BookOpen, Clock, Loader2, BrainCircuit, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AboutStory from "@/components/AboutStory";
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -37,7 +38,7 @@ export default function DashboardPage() {
         let tempTotalLessons = 0;
         const q = query(collection(db, "chapters"), orderBy("order", "asc"));
         const snapshot = await getDocs(q);
-        
+
         const fetchedChapters = await Promise.all(snapshot.docs.map(async (chapterDoc) => {
           const lessonsQ = query(collection(db, "chapters", chapterDoc.id, "lessons"), orderBy("order", "asc"));
           const lessonsSnap = await getDocs(lessonsQ);
@@ -45,7 +46,7 @@ export default function DashboardPage() {
           tempTotalLessons += lessons.length;
           return { id: chapterDoc.id, ...chapterDoc.data(), lessons };
         }));
-        
+
         setChapters(fetchedChapters);
         setTotalLessons(tempTotalLessons);
 
@@ -55,10 +56,10 @@ export default function DashboardPage() {
           const uData = userDoc.data();
           const owned = uData.ownedCourses || [];
           const pDates = uData.purchaseDates || {};
-          
+
           setOwnedCourses(owned);
           setPurchaseDates(pDates);
-          
+
           const hasActiveCourse = owned.some((id: string) => {
             const pDateStr = pDates[id];
             if (!pDateStr) return true;
@@ -66,7 +67,7 @@ export default function DashboardPage() {
             const expiryDate = new Date(pDate.getTime() + 150 * 24 * 60 * 60 * 1000);
             return expiryDate > new Date();
           });
-          
+
           if (!hasActiveCourse) {
             router.push("/catalog");
             return;
@@ -112,7 +113,13 @@ export default function DashboardPage() {
     </div>
   );
 
-  const overallCourseProgress = totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
+  let validCompletedLessonsCount = 0;
+  chapters.forEach(chapter => {
+    const chapterLessons = chapter.lessons || [];
+    validCompletedLessonsCount += chapterLessons.filter((l: any) => completedLessons.includes(l.id)).length;
+  });
+
+  const overallCourseProgress = totalLessons > 0 ? Math.round((validCompletedLessonsCount / totalLessons) * 100) : 0;
   const accuracyRate = practiceStats.totalSolved > 0 ? Math.round((practiceStats.correctAnswers / practiceStats.totalSolved) * 100) : 0;
 
   return (
@@ -123,7 +130,7 @@ export default function DashboardPage() {
         <div className="ambient-orb absolute top-0 right-0 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none -translate-y-1/3 animate-glow-pulse"></div>
         <div className="ambient-orb absolute bottom-0 left-0 w-80 h-80 bg-sky-500/15 rounded-full blur-3xl pointer-events-none translate-y-1/3 animate-glow-pulse" style={{ animationDelay: '2s' }}></div>
         <div className="ambient-orb absolute top-1/2 left-1/3 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none animate-glow-pulse" style={{ animationDelay: '4s' }}></div>
-        
+
         <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
           <div>
             <span className="text-sm font-black tracking-widest text-blue-400 uppercase bg-blue-950/80 border border-blue-900/50 px-3 py-1 rounded-full inline-block mb-3.5">
@@ -136,17 +143,17 @@ export default function DashboardPage() {
               מוכנים לעוד תרגול פסיכומטרי מנצח? הנה סיכום ההישגים וההתקדמות שלכם.
             </p>
           </div>
-          
+
           <div className="flex flex-col gap-3 w-full md:w-auto mt-6 md:mt-0 min-w-[240px] sm:min-w-[280px]">
-            <Link 
-              href="/practice" 
+            <Link
+              href="/practice"
               className="w-full px-8 py-4 bg-gradient-to-r from-blue-600 to-sky-500 text-white rounded-2xl font-black text-base hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5 transition-all duration-300 active:scale-95 flex items-center justify-between gap-4 cursor-pointer shadow-md"
             >
-              <span>המשך לתרגול חכם</span>
+              <span> המשך לתרגול מקוון</span>
               <ChevronLeft size={20} />
             </Link>
-            <Link 
-              href="/course" 
+            <Link
+              href="/course"
               className="w-full px-8 py-4 bg-white/10 hover:bg-white/15 backdrop-blur-md text-white border border-white/10 rounded-2xl font-black text-base hover:shadow-lg hover:shadow-white/5 hover:-translate-y-0.5 transition-all duration-300 active:scale-95 flex items-center justify-between gap-4 cursor-pointer"
             >
               <span>מעבר לשיעור פעיל</span>
@@ -157,10 +164,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-14 relative z-20 space-y-10">
-        
+
         {/* כרטיסיות סטטיסטיקה */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 stagger-children">
-          
+
           {/* התקדמות בקורס */}
           <div className="glass-card bg-white/80 dark:bg-slate-800/50 p-6 rounded-3xl shadow-[0_4px_20px_-4px_rgba(15,23,42,0.03)] dark:shadow-slate-950/20 border border-slate-100 dark:border-slate-700/50 hover:shadow-lg hover:border-blue-100 dark:hover:border-blue-500/30 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group backdrop-blur-sm">
             <div className="flex items-center justify-between mb-6">
@@ -219,7 +226,7 @@ export default function DashboardPage() {
               <h2 className="text-2xl font-black text-black dark:text-white tracking-tight font-display">תוכנית הלימודים בכמותיקס</h2>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {chapters.map((chapter) => {
               const chapterLessons = chapter.lessons || [];
@@ -229,11 +236,10 @@ export default function DashboardPage() {
 
               return (
                 <Link key={chapter.id} href="/course" className="block group">
-                  <div className={`p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-between h-full ${
-                    isFinished 
-                      ? 'bg-emerald-50/20 dark:bg-emerald-500/5 border-emerald-100/70 dark:border-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:bg-emerald-50/40 dark:hover:bg-emerald-500/10' 
+                  <div className={`p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-between h-full ${isFinished
+                      ? 'bg-emerald-50/20 dark:bg-emerald-500/5 border-emerald-100/70 dark:border-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:bg-emerald-50/40 dark:hover:bg-emerald-500/10'
                       : 'bg-[#f8fafc]/30 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700/50 hover:border-blue-100/80 dark:hover:border-blue-500/30 hover:bg-white dark:hover:bg-slate-800/60 hover:shadow-md dark:hover:shadow-slate-950/10'
-                  }`}>
+                    }`}>
                     <div>
                       <div className="flex justify-between items-start mb-6 gap-3">
                         <div className="flex flex-col">
@@ -244,23 +250,23 @@ export default function DashboardPage() {
                             // חישוב תוקף הקורס
                             const hasFullBundle = ownedCourses.includes("full-bundle");
                             const hasThisCourse = ownedCourses.includes(chapter.id);
-                            
+
                             // אם אין לו את הקורס בשום צורה, לא נציג תוקף
                             if (!hasFullBundle && !hasThisCourse && ownedCourses.length > 0) {
                               return <span className="text-xs text-slate-500 mt-1">לא נרכש</span>;
                             }
-                            
+
                             // אם זה קורס פתוח לכולם (או שיש לו אותו)
                             const pDateStr = hasFullBundle ? (purchaseDates["full-bundle"] || purchaseDates[chapter.id]) : purchaseDates[chapter.id];
                             if (!pDateStr && !hasFullBundle && !hasThisCourse) return null; // אין מידע
-                            
+
                             // אם יש לו אבל חסר תאריך רכישה מהעבר, נניח שהתוקף מלא לעכשיו
                             const effectiveDateStr = pDateStr || new Date().toISOString();
                             const pDate = new Date(effectiveDateStr);
                             const expiryDate = new Date(pDate.getTime() + 150 * 24 * 60 * 60 * 1000);
                             const now = new Date();
                             const diffDays = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                            
+
                             if (diffDays > 0) {
                               return <span className="text-xs text-emerald-500 dark:text-emerald-400 mt-1 font-bold">(בתוקף לעוד {diffDays} ימים)</span>;
                             } else {
@@ -275,7 +281,7 @@ export default function DashboardPage() {
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="mt-auto">
                       <div className="flex justify-between text-sm mb-2">
                         <span className={isFinished ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-black dark:text-white font-bold"}>
@@ -285,12 +291,11 @@ export default function DashboardPage() {
                           {chapterProgress}%
                         </span>
                       </div>
-                      
+
                       <div className="h-2 w-full bg-slate-200/70 dark:bg-slate-700/50 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-1000 ${
-                            isFinished ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-blue-600 to-sky-500'
-                          }`} 
+                        <div
+                          className={`h-full rounded-full transition-all duration-1000 ${isFinished ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-blue-600 to-sky-500'
+                            }`}
                           style={{ width: `${chapterProgress}%` }}
                         ></div>
                       </div>
@@ -302,6 +307,9 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      
+      {/* אזור "הסיפור שלנו" */}
+      <AboutStory />
     </div>
   );
 }
