@@ -139,7 +139,7 @@ export default function DashboardPage() {
             <h1 className="text-3xl sm:text-4xl font-black mb-2 tracking-tight text-white font-display">
               שלום, {user?.displayName || "סטודנט/ית"} 👋
             </h1>
-            <p className="text-black dark:text-white text-sm sm:text-base font-medium">
+            <p className="text-slate-300 text-sm sm:text-base font-medium">
               מוכנים לעוד תרגול פסיכומטרי מנצח? הנה סיכום ההישגים וההתקדמות שלכם.
             </p>
           </div>
@@ -237,8 +237,8 @@ export default function DashboardPage() {
               return (
                 <Link key={chapter.id} href="/course" className="block group">
                   <div className={`p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col justify-between h-full ${isFinished
-                      ? 'bg-emerald-50/20 dark:bg-emerald-500/5 border-emerald-100/70 dark:border-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:bg-emerald-50/40 dark:hover:bg-emerald-500/10'
-                      : 'bg-[#f8fafc]/30 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700/50 hover:border-blue-100/80 dark:hover:border-blue-500/30 hover:bg-white dark:hover:bg-slate-800/60 hover:shadow-md dark:hover:shadow-slate-950/10'
+                    ? 'bg-emerald-50/20 dark:bg-emerald-500/5 border-emerald-100/70 dark:border-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/40 hover:bg-emerald-50/40 dark:hover:bg-emerald-500/10'
+                    : 'bg-[#f8fafc]/30 dark:bg-slate-800/30 border-slate-100 dark:border-slate-700/50 hover:border-blue-100/80 dark:hover:border-blue-500/30 hover:bg-white dark:hover:bg-slate-800/60 hover:shadow-md dark:hover:shadow-slate-950/10'
                     }`}>
                     <div>
                       <div className="flex justify-between items-start mb-6 gap-3">
@@ -307,7 +307,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-      
+
       {/* אזור "הסיפור שלנו" */}
       <AboutStory />
     </div>
