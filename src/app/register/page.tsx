@@ -12,6 +12,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -20,6 +21,12 @@ export default function RegisterPage() {
 
     setIsLoggingIn(true);
     setError("");
+
+    if (!termsAccepted) {
+      setError("יש לאשר את תנאי השימוש ומדיניות הפרטיות");
+      setIsLoggingIn(false);
+      return;
+    }
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
@@ -35,6 +42,12 @@ export default function RegisterPage() {
 
     setIsLoggingIn(true);
     setError("");
+
+    if (!termsAccepted) {
+      setError("יש לאשר את תנאי השימוש ומדיניות הפרטיות כדי להמשיך");
+      setIsLoggingIn(false);
+      return;
+    }
 
     try {
       await signInWithPopup(auth, googleProvider);
@@ -106,6 +119,20 @@ export default function RegisterPage() {
                   required
                 />
               </div>
+            </div>
+
+            {/* הסכמה לתקנון */}
+            <div className="flex items-start gap-2 text-right">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-1 w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
+              />
+              <label htmlFor="terms" className="text-sm text-slate-600 dark:text-slate-400">
+                קראתי ואני מסכים ל<Link href="/terms" className="text-blue-600 dark:text-blue-400 hover:underline">תנאי השימוש</Link> ול<Link href="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline">מדיניות הפרטיות</Link>
+              </label>
             </div>
 
             {error && <div className="p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-sm font-bold rounded-xl border border-red-100 dark:border-red-500/20 text-right animate-pulse transition-colors">{error}</div>}

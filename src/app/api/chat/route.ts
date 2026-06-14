@@ -54,9 +54,40 @@ const MODELS_TO_TRY = [
   "gemini-2.0-flash",       // Legacy standard fallback
 ];
 
+// Simple in-memory rate limiter (Note: resets on serverless cold starts, but provides basic protection)
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 15;
+const ipRequests = new Map<string, { count: number; startTime: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const record = ipRequests.get(ip);
+  
+  if (!record) {
+    ipRequests.set(ip, { count: 1, startTime: now });
+    return false;
+  }
+  
+  if (now - record.startTime > RATE_LIMIT_WINDOW_MS) {
+    ipRequests.set(ip, { count: 1, startTime: now });
+    return false;
+  }
+  
+  record.count++;
+  return record.count > MAX_REQUESTS_PER_WINDOW;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { messages } = await request.json();
+
+    const ip = request.headers.get("x-forwarded-for") || request.ip || "unknown";
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: "יותר מידי בקשות, אנא המתן מעט ונסה שוב. ⏳" },
+        { status: 429 }
+      );
+    }
 
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(

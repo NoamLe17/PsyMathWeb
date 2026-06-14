@@ -61,6 +61,23 @@ export default function CourseCheckout({ setCurrentView, course, user }: CourseC
       alert(`תודה רבה ${details.payer.name.given_name}! התשלום על הקורס "${course.title}" התקבל בהצלחה. גישה נפתחה.`);
       setCurrentView("my-courses");
 
+      // שליחת אימיילים (קבלת רכישה והתראה למנהל)
+      try {
+        await fetch("/api/send-receipt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            buyerEmail: user.email || details.payer.email_address,
+            buyerName: details.payer.name.given_name || user.displayName || "תלמיד",
+            courseTitle: course.title,
+            orderId: details.id,
+            price: course.price
+          })
+        });
+      } catch (emailError) {
+        console.error("Failed to trigger email API:", emailError);
+      }
+
     } catch (error) {
       console.error("Error saving purchase to Firebase:", error);
       alert("התשלום עבר, אך חלה שגיאה בעדכון המערכת. אנא צור קשר עם התמיכה.");

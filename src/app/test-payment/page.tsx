@@ -52,6 +52,24 @@ export default function PaymentPage() {
 
       // 4. הצגת הודעת הצלחה חגיגית והעברה אוטומטית לעמוד דאשבורד
       alert(`תודה רבה ${details.payer.name.given_name}! התשלום התקבל בהצלחה. הגישה לקורסים נפתחה עבורך 🎉`);
+
+      // שליחת אימיילים (קבלת רכישה והתראה למנהל)
+      try {
+        await fetch("/api/send-receipt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            buyerEmail: user.email || details.payer.email_address,
+            buyerName: details.payer.name.given_name || "תלמיד",
+            courseTitle: "מנוי כמותיקס (בדיקה)",
+            orderId: details.id,
+            price: 1.00
+          })
+        });
+      } catch (emailError) {
+        console.error("Failed to trigger email API:", emailError);
+      }
+
       router.push("/dashboard");
 
     } catch (error) {

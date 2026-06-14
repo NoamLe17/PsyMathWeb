@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, getDocs, query, orderBy } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, query, orderBy, deleteDoc } from "firebase/firestore";
+import { deleteUser } from "firebase/auth";
 import { PlayCircle, CheckCircle2, TrendingUp, Award, BookOpen, Clock, Loader2, BrainCircuit, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -34,18 +35,28 @@ export default function DashboardPage() {
     const fetchDashboardData = async () => {
       if (!user) return;
       try {
-        // 1. שליפת מבנה הקורס התיאורטי
+        // 1. שליפת מבנה הקורס התיאורטי (עם Caching)
         let tempTotalLessons = 0;
-        const q = query(collection(db, "chapters"), orderBy("order", "asc"));
-        const snapshot = await getDocs(q);
+        let fetchedChapters = [];
+        
+        const cachedChapters = sessionStorage.getItem("psymath_chapters");
+        if (cachedChapters) {
+          fetchedChapters = JSON.parse(cachedChapters);
+          tempTotalLessons = fetchedChapters.reduce((acc: number, ch: any) => acc + (ch.lessons?.length || 0), 0);
+        } else {
+          const q = query(collection(db, "chapters"), orderBy("order", "asc"));
+          const snapshot = await getDocs(q);
 
-        const fetchedChapters = await Promise.all(snapshot.docs.map(async (chapterDoc) => {
-          const lessonsQ = query(collection(db, "chapters", chapterDoc.id, "lessons"), orderBy("order", "asc"));
-          const lessonsSnap = await getDocs(lessonsQ);
-          const lessons = lessonsSnap.docs.map(l => ({ id: l.id, ...l.data() }));
-          tempTotalLessons += lessons.length;
-          return { id: chapterDoc.id, ...chapterDoc.data(), lessons };
-        }));
+          fetchedChapters = await Promise.all(snapshot.docs.map(async (chapterDoc) => {
+            const lessonsQ = query(collection(db, "chapters", chapterDoc.id, "lessons"), orderBy("order", "asc"));
+            const lessonsSnap = await getDocs(lessonsQ);
+            const lessons = lessonsSnap.docs.map(l => ({ id: l.id, ...l.data() }));
+            return { id: chapterDoc.id, ...chapterDoc.data(), lessons };
+          }));
+          
+          sessionStorage.setItem("psymath_chapters", JSON.stringify(fetchedChapters));
+          tempTotalLessons = fetchedChapters.reduce((acc: number, ch: any) => acc + (ch.lessons?.length || 0), 0);
+        }
 
         setChapters(fetchedChapters);
         setTotalLessons(tempTotalLessons);
@@ -105,6 +116,47 @@ export default function DashboardPage() {
 
     fetchDashboardData();
   }, [user, authLoading, router]);
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    if (!confirm("האם אתה בטוח שברצונך למחוק את החשבון לצמיתות? פעולה זו אינה ניתנת לביטול ותמחק את כל ההתקדמות שלך.")) return;
+    
+    try {
+      setLoading(true);
+      const uid = user.uid;
+      
+      // 1. Delete progress subcollection
+      const progressQ = query(collection(db, "users", uid, "progress"));
+      const progressSnap = await getDocs(progressQ);
+      const progressPromises = progressSnap.docs.map(d => deleteDoc(doc(db, "users", uid, "progress", d.id)));
+      await Promise.all(progressPromises);
+
+      // 2. Delete simulations subcollection
+      const simQ = query(collection(db, "users", uid, "simulations"));
+      const simSnap = await getDocs(simQ);
+      const simPromises = simSnap.docs.map(d => deleteDoc(doc(db, "users", uid, "simulations", d.id)));
+      await Promise.all(simPromises);
+
+      // 3. Delete main documents
+      await deleteDoc(doc(db, "userProgress", uid));
+      await deleteDoc(doc(db, "users", uid));
+
+      // 4. Delete Auth user
+      await deleteUser(user);
+      
+      router.push("/");
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      if (error.code === 'auth/requires-recent-login') {
+        alert("מטעמי אבטחה, יש להתחבר מחדש כדי למחוק את החשבון.");
+        // Optional: sign out the user so they have to sign in again
+      } else {
+        alert("אירעה שגיאה במחיקת החשבון. אנא נסה שוב.");
+      }
+      setLoading(false);
+    }
+  };
+
 
   if (authLoading || loading) return (
     <div className="min-h-screen flex flex-col gap-4 items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -305,6 +357,20 @@ export default function DashboardPage() {
               );
             })}
           </div>
+        </div>
+        
+        {/* מחיקת חשבון */}
+        <div className="mt-12 p-6 rounded-3xl border border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-950/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="text-red-600 dark:text-red-400 font-bold mb-1">מחיקת חשבון</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">מחיקת החשבון שלך היא פעולה סופית ולא ניתנת לביטול. כל ההתקדמות והמידע שלך יימחקו לצמיתות מהמערכת.</p>
+          </div>
+          <button
+            onClick={handleDeleteAccount}
+            className="px-6 py-2.5 bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 rounded-xl font-bold hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors whitespace-nowrap shrink-0"
+          >
+            מחק חשבון לצמיתות
+          </button>
         </div>
       </div>
 

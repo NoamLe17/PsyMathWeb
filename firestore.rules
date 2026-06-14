@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() { return request.auth != null; }
+    function isAdmin() { return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'; }
+
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      match /progress/{progressId} { allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin()); }
+      match /simulations/{simulationId} { allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin()); }
+    }
+    match /userProgress/{userId} { allow read, write: if isAuthenticated() && (request.auth.uid == userId || isAdmin()); }
+    match /lessons/{lessonId} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /questions/{questionId} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /topics/{document=**} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /chapters/{document=**} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /simulations/{document=**} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+    match /institutes/{document=**} { allow read: if isAuthenticated(); allow write: if isAdmin(); }
+  }
+}
