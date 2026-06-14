@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   try {
     const { messages } = await request.json();
 
-    const ip = request.headers.get("x-forwarded-for") || request.ip || "unknown";
+    const ip = request.headers.get("x-forwarded-for") || "unknown";
     if (isRateLimited(ip)) {
       return NextResponse.json(
         { error: "יותר מידי בקשות, אנא המתן מעט ונסה שוב. ⏳" },
